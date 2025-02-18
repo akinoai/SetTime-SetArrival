@@ -61,26 +61,28 @@ function TimeDetection(columnId, selectedIndex){
     console.log(`hours: ${hours}, minutes: ${minutes}, seconds: ${seconds}`)
 }
 
-function autoDecrement(columnId, max) {
+function autoDecrement(columnId, max, callback) {
     const column = document.getElementById(columnId);
     let selectedIndex = max;
 
-    setInterval(() => {
-        if(selectedIndex > 0){
+    const intervalId = setInterval(() => {
+        if (selectedIndex > 0) {
             const spans = column.querySelectorAll("span");
             spans[selectedIndex].classList.remove("selected");
-    
-            selectedIndex = (selectedIndex - 1 + spans.length) % spans.length;
+
+            selectedIndex--;
+
             spans[selectedIndex].classList.add("selected");
-    
+
             column.scrollTo({
-            top: spans[selectedIndex].offsetTop - column.clientHeight / 2 + spans[selectedIndex].clientHeight / 2,
-            behavior: "smooth",
+                top: spans[selectedIndex].offsetTop - column.clientHeight / 2 + spans[selectedIndex].clientHeight / 2,
+                behavior: "smooth",
             });
         } else {
-            activateUI();
+            clearInterval(intervalId); // Останавливаем таймер
+            if (callback) callback(); // Запускаем следующий таймер
         }
-    }, 1000); // Меняем число каждую секунду
+    }, 1000);
 }
 
 function activateUI(){
@@ -104,8 +106,13 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 button.addEventListener("click", () => {
-    autoDecrement("seconds", seconds); // Автоматически обновляем секунды
-    autoDecrement("minutes", minutes); // Автоматически обновляем секунды
-    autoDecrement("hours", hours); // Автоматически обновляем секунды
     deactivateUI();
+
+    autoDecrement("seconds", seconds, () => {  // Отсчёт секунд (до 0)
+        autoDecrement("minutes", minutes, () => { // После секунд - минуты
+            autoDecrement("hours", 23, () => { // После минут - часы
+                activateUI(); // Когда все таймеры закончатся, снова активируем UI
+            });
+        });
+    });
 });
